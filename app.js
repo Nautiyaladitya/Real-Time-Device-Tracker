@@ -2,39 +2,46 @@ const express = require("express");
 const app = express();
 const path = require('path');
 const http = require("http");
-const socketio = require("socket.io");  // socket.io pe server chal raha hai
+const socketio = require("socket.io"); 
 
-// app.use(express.json()); // extra to remove !!!!!!!!!!!!!!
-const server = http.createServer(app); //(ye server bana ke dega),  In node modules there is this main method to create server 
-const io = socketio(server); //calling socketio function & will use this io variable in future !
-// end boiler -> socket.io
+// Create server and initialize Socket.io
+const server = http.createServer(app);
+const io = socketio(server);
 
+// Set EJS as view engine
+app.set("view engine", "ejs");
 
-// performing ejs
+// Serve static files from 'public' folder
+app.use(express.static(path.join(__dirname, 'public')));
 
-app.set("view engine", "ejs");  // view engine set up 
-app.use(express.static(path.join(__dirname, "public"))); 
-//Middleware to serve static files , setting public folder so that we can acces our static files eg. images css file etc in public folder & use vanilla js..
-
-//handling request comming from io in script.js || Handling socket.io connections
-io.on("connection", function (socket){
+// Socket.io event handling for device tracking
+io.on("connection", function (socket) {
     console.log("New user connected");
-    socket.on("send-location", function (data){
-        io.emit("receive-location", {id: socket.id, ...data});
+
+    // Handle location sending from client
+    socket.on("send-location", function (data) {
+        io.emit("receive-location", { id: socket.id, ...data });
     });
     
-    socket.on("disconnect", function () {  // handling disconnect in backend , release this event. 
+    // Handle user disconnection
+    socket.on("disconnect", function () {
         io.emit("user-disconnected", socket.id);
     });
 });
 
-
-app.get("/", function (req, res) { // created a route
-    res.render("index"); // rendering .ejs file
+// Serve index.ejs for the root route
+app.get("/", function (req, res) { 
+    res.render("index");
 });
 
-server.listen(3000, ()=> {
-    console.log("Server is running on http://localhost:3000");
-
+// API to handle device location requests
+app.get('/api/deviceLocation', (req, res) => {
+    // Logic for tracking device location can go here
+    res.json({ message: "Device location data" });
 });
 
+// Set up dynamic port for deployment and local development
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
+});
