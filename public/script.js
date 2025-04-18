@@ -5,8 +5,11 @@ navigator.geolocation.watchPosition(
 (position) => {
 const { latitude, longitude } = position.coords; 
 
+const eventSource = new EventSource('/api/recipeStream');
+
 // Emit location to the server
 socket.emit("send-location", { latitude, longitude }); 
+
 
 },
 (error) => {
